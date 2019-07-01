@@ -1,56 +1,66 @@
-# Hello-Nginx-Kubernetes
-It is a sample of nginx using kubernetes.
-Also, helm is used for deplolyment.
+# hello-nodejs-kubernetes
+It is a sample of nodejs with kubernetes.  
+I will show how to make a kubenetes infra struction and start the first application based on node.js.  
+Also, it also contains how to scale up or down and show the status in Dashboard.  
 
-- build hello-nginx
-$ docker build -t hello-nginx:v1 .
-$ docker images
-- local test
-$ docker run -d --name hello-nginx  -p 8080:8080 hello-nginx:v1  
-$ curl localhost:8080
+## build hello-nodejs  
+$ docker build -t hello-nodejs:v1 .  
 
-- install helm
-$ kubectl create -f k8s/rbac-config.yaml
-$ helm init --service-account tiller
-$ helm create chart-hello-nginx
+## check the built image  
+$ docker images  
 
-- edit chart-hello-nginx/value.yaml
-. # of replica
-  replicaCount: 3
-. repository
-  repository: 994942771862.dkr.ecr.eu-west-2.amazonaws.com/repository-nginx
-  tag: latest  
-. service type for exposition
-  type: LoadBalancer
+## check the operation  
+$ curl -i localhost:8080   
 
-$ helm lint chart-hello-nginx
-$ helm package chart-hello-nginx
-$ helm inspect chart-hello-nginx
-$ helm install chart-hello-nginx --name hello
+## tagging  
+$ docker tag hello-nodejs:v1 994942771862.dkr.ecr.eu-west-2.amazonaws.com/repository-hello-nodejs  
 
-• Troubleshoot: If there is an error to run it, use these commends.
-$ kubectl create serviceaccount --namespace kube-system tiller
-$ kubectl create clusterrolebinding tiller-cluster-rule --clusterrole=cluster-admin --serviceaccount=kube-system:tiller
-$kubectl patch deploy --namespace kube-system tiller-deploy -p '{"spec":{"template":{"spec":{"serviceAccount":"tiller"}}}}'      
-$ helm init --service-account tiller --upgrade
+## image push  
+$ docker push 994942771862.dkr.ecr.eu-west-2.amazonaws.com/repository-ksdyb  
 
-- check the operation
-$ kubectl get services
-NAME                      TYPE           CLUSTER-IP       EXTERNAL-IP                                                               PORT(S)          AGE
-hello-chart-hello-nginx   LoadBalancer   10.100.6.103     a59ab49439bd011e9a5580a2ce4b1bdd-1160858148.eu-west-2.elb.amazonaws.com   80:30505/TCP     114s
-kubernetes                ClusterIP      10.100.0.1       <none>                                                                    443/TCP          2d23h
+## deplay and create service for hello-nodejs  
+$ kubectl create -f k8s/hello-nodejs.yaml  
 
-$ curl -i a59ab49439bd011e9a5580a2ce4b1bdd-1160858148.eu-west-2.elb.amazonaws.com
-HTTP/1.1 200 OK
-Server: nginx/1.17.0
-Date: Mon, 01 Jul 2019 07:21:58 GMT
-Content-Type: text/html
-Content-Length: 28
-Last-Modified: Mon, 01 Jul 2019 06:10:32 GMT
-Connection: keep-alive
-ETag: "5d19a3d8-1c"
-Accept-Ranges: bytes
+## check the external ip or domain  
+$ kubectl get service -o wide  
+NAME           TYPE           CLUSTER-IP     EXTERNAL-IP                                                               PORT(S)          AGE   SELECTOR  
+hello-nodejs   LoadBalancer   10.100.71.97   a74430335892d11e9bc290ab61396c5b-1565267968.eu-west-1.elb.amazonaws.com   8080:32604/TCP   61s   run=hello-nodejs  
+kubernetes     ClusterIP      10.100.0.1     <none>                                                                    443/TCP          27h   <none>  
 
-<h1>Hello Kubernetes</h1> 
+## check the operation  
+$ curl -i http://a74430335892d11e9bc290ab61396c5b-1565267968.eu-west-1.elb.amazonaws.com:8080  
 
+## If scale-up is required, use this command  
+$ kubectl get pods
+NAME                            READY   STATUS    RESTARTS   AGE  
+hello-nodejs-66f54786bb-wmxbw   1/1     Running   0          10m  
 
+$ kubectl scale deployment hello-nodejs --replicas=3  
+deployment.extensions/hello-nodejs scaled  
+
+$ kubectl get nodes  
+NAME                                          STATUS   ROLES    AGE     VERSION  
+ip-172-31-20-131.eu-west-1.compute.internal   Ready    <none>   6h54m   v1.12.7  
+ip-172-31-20-235.eu-west-1.compute.internal   Ready    <none>   6h54m   v1.12.7  
+ip-172-31-30-134.eu-west-1.compute.internal   Ready    <none>   6h54m   v1.12.7  
+ip-172-31-30-142.eu-west-1.compute.internal   Ready    <none>   6h54m   v1.12.7  
+
+## install the packages for dashboard  
+$ kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v1.10.1/src/deploy/recommended/kubernetes-dashboard.yaml  
+
+$ kubectl apply -f https://raw.githubusercontent.com/kubernetes/heapster/master/deploy/kube-config/influxdb/heapster.yaml  
+
+$ kubectl apply -f https://raw.githubusercontent.com/kubernetes/heapster/master/deploy/kube-config/influxdb/influxdb.yaml  
+
+$ kubectl apply -f https://raw.githubusercontent.com/kubernetes/heapster/master/deploy/kube-config/rbac/heapster-rbac.yaml  
+
+$ kubectl apply -f k8s/eks-admin-service-account.yaml  
+
+## check the token  
+$ kubectl -n kube-system describe secret $(kubectl -n kube-system get secret | grep eks-admin | awk '{print $1}')  
+
+## start kube proxy  
+$ kubectl proxy  
+
+## open dashboard in a browser  
+http://localhost:8001/api/v1/namespaces/kube-system/services/https:kubernetes-dashboard:/proxy/#!/login  

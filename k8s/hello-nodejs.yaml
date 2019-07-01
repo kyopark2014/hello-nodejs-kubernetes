@@ -14,7 +14,7 @@ spec:
         app: hello
     spec:
       containers:
-      - image: 994942771862.dkr.ecr.eu-west-2.amazonaws.com/repository:latest
+      - image: 994942771862.dkr.ecr.eu-west-2.amazonaws.com/repository-hello-nodejs:latest
         imagePullPolicy: Always
         name: hello-nodejs
         ports:
