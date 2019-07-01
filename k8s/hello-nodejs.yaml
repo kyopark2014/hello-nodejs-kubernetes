@@ -1,0 +1,38 @@
+apiVersion: apps/v1beta2 # for versions before 1.9.0 use apps/v1beta2
+kind: Deployment
+metadata:
+  name: hello-nodejs
+spec:
+  selector:
+    matchLabels:
+      app: hello
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: hello
+    spec:
+      containers:
+      - image: 994942771862.dkr.ecr.eu-west-2.amazonaws.com/repository:latest
+        imagePullPolicy: Always
+        name: hello-nodejs
+        ports:
+        - containerPort: 8080
+          name: hello-nodejs
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: hello-nodejs
+  labels:
+    app: hello
+spec:
+  type: LoadBalancer
+  ports:
+    - port: 8080
+      protocol: TCP
+      targetPort: 8080
+  selector:
+    app: hello
+
