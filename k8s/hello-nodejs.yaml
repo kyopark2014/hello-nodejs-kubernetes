@@ -14,25 +14,9 @@ spec:
         app: hello
     spec:
       containers:
-      - image: 994942771862.dkr.ecr.eu-west-2.amazonaws.com/repository-hello-nodejs:latest
+      - image: 99942771862.dkr.ecr.eu-west-2.amazonaws.com/repository-ksdyb:latest
         imagePullPolicy: Always
         name: hello-nodejs
         ports:
         - containerPort: 8080
           name: hello-nodejs
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: hello-nodejs
-  labels:
-    app: hello
-spec:
-  type: LoadBalancer
-  ports:
-    - port: 8080
-      protocol: TCP
-      targetPort: 8080
-  selector:
-    app: hello
-
